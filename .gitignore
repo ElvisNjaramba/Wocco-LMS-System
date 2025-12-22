@@ -1,0 +1,79 @@
+# =========================
+# Virtual Environments
+# =========================
+venv/
+env/
+.env/
+.venv/
+
+# =========================
+# Python / Django
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Django migrations cache
+**/migrations/__pycache__/
+
+# =========================
+# Python Tools
+# =========================
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# =========================
+# React / Node
+# =========================
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+
+# =========================
+# Build & Package Managers
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Git
+# =========================
+*.orig
+*.swp
+*.swo
+
+# =========================
+# Environment Variables
+# =========================
+.env.*
