@@ -1,19 +1,43 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import api from "../api/axios";
 
 const FinalQuizResult = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
+  const [data, setData] = useState(state || null);
+  const [loading, setLoading] = useState(!state);
+
   useEffect(() => {
     if (!state) {
-      api.get("/final-quiz/result/")
-        .then(res => setData(res.data))
+      api
+        .get("/final-quiz/result/")
+        .then(res => {
+          setData(res.data);
+          setLoading(false);
+        })
         .catch(() => navigate("/dashboard"));
     }
-  }, []);
+  }, [state, navigate]);
 
+  if (loading || !data) {
+    return (
+      <div className="text-center mt-20 text-lg">
+        Loading results...
+      </div>
+    );
+  }
 
-  const { score, passed, results } = state;
+  const { score, passed, results } = data;
+
+  const handleAction = () => {
+    if (passed) {
+      navigate("/dashboard");
+    } else {
+      navigate("/final-quiz"); // 🔁 retake quiz
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-8 mt-12 bg-white rounded-xl shadow-lg">
@@ -68,10 +92,14 @@ const FinalQuizResult = () => {
 
       <div className="text-center mt-8">
         <button
-          onClick={() => navigate("/dashboard")}
-          className="bg-indigo-600 text-white px-6 py-3 rounded-lg"
+          onClick={handleAction}
+          className={`px-6 py-3 rounded-lg text-white shadow transition ${
+            passed
+              ? "bg-indigo-600 hover:bg-indigo-700"
+              : "bg-red-600 hover:bg-red-700"
+          }`}
         >
-          Go to Dashboard
+          {passed ? "Go to Dashboard" : "Retake Final Quiz"}
         </button>
       </div>
     </div>
