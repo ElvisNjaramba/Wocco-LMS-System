@@ -34,7 +34,7 @@ const FinalQuiz = () => {
         question_ids: questions.map(q => q.id)  // send exact question IDs
       });
 
-      navigate("/final-quiz/result", { state: { score: res.data.score, passed: res.data.passed } });
+      navigate("/final-quiz/result", { state: { score: res.data.score, passed: res.data.passed, results: res.data.results } });
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.detail || "Failed to submit final quiz");
