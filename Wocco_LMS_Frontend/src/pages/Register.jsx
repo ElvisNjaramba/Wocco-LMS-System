@@ -116,13 +116,13 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col items-center">
           <div className="flex flex-wrap justify-between w-full max-w-[800px]">
-            <InputField label="First Name" placeholder="John" onChange={setFirstname} value={first_name} />
-            <InputField label="Last Name" placeholder="Doe" onChange={setLastname} value={last_name} />
+            <InputField label="First Name" placeholder="Amanda" onChange={setFirstname} value={first_name} />
+            <InputField label="Last Name" placeholder="Ruth" onChange={setLastname} value={last_name} />
           </div>
 
           <div className="flex flex-wrap justify-between w-full max-w-[800px]">
-            <InputField label="Username" placeholder="johndoe123" onChange={setUsername} value={username} />
-            <InputField label="Email" placeholder="john@example.com" type="email" onChange={setEmail} value={email} />
+            <InputField label="Username" placeholder="amandaruthHR" onChange={setUsername} value={username} />
+            <InputField label="Email" placeholder="amanda@example.com" type="email" onChange={setEmail} value={email} />
           </div>
 
           <div className="flex flex-wrap justify-between w-full max-w-[800px]">

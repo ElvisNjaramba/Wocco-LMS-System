@@ -19,6 +19,7 @@ import FinalQuizResult from './pages/FinalQuizResult';
 // Layout components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import SuperuserOnly from './components/SuperuserOnly';
 
 function AppRoutes() {
   const location = useLocation();
@@ -37,7 +38,14 @@ function AppRoutes() {
           <Route path="/modules/:id" element={<ModuleDetail />} />
           <Route path="/modules/:id/content" element={<ModuleContent />} />
           <Route path="/modules/:id/quiz" element={<ModuleQuiz />} />
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/register"
+            element={
+              <SuperuserOnly>
+                <Register />
+              </SuperuserOnly>
+            }
+          />
           <Route path="/superuser/dashboard" element={<SuperuserDashboard />} />
           <Route path="/superuser/add-user" element={<AddUser />} />
           <Route path="/superuser/upload-users" element={<UploadUsers />} />
