@@ -46,8 +46,8 @@ class Module(models.Model):
 # --------------------------------
 class ModulePage(models.Model):
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="pages")
-    title = models.CharField(max_length=150)
-    content = models.TextField()
+    title = models.CharField(max_length=150, null=True, blank=True)
+    content = models.TextField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

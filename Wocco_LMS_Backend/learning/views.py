@@ -60,9 +60,28 @@ def complete_module_api(request, pk):
     questions = module.questions.all()[:10]
 
     score = 0
+    detailed_results = []
+
     for q in questions:
-        if str(answers.get(str(q.id))) == q.correct_option:
+        selected = answers.get(str(q.id))
+        is_correct = selected == q.correct_option
+
+        if is_correct:
             score += 1
+
+        detailed_results.append({
+            "question_id": q.id,
+            "question": q.text,
+            "selected": selected,
+            "correct": q.correct_option,
+            "is_correct": is_correct,
+            "options": {
+                "A": q.option_a,
+                "B": q.option_b,
+                "C": q.option_c,
+                "D": q.option_d,
+            }
+        })
 
     progress, _ = UserProgress.objects.get_or_create(
         user=user,
@@ -73,6 +92,7 @@ def complete_module_api(request, pk):
     progress.completed = score >= 8
     progress.save()
 
+    next_module = None
     if score >= 8:
         position = user.profile.title.name
         next_module = (
@@ -82,20 +102,16 @@ def complete_module_api(request, pk):
             .first()
         )
 
-        return Response({
-            "passed": True,
-            "score": score,
-            "next": {
-                "id": next_module.id,
-                "title": next_module.title_ref.title
-            } if next_module else None
-        })
-
     return Response({
-        "passed": False,
+        "passed": score >= 8,
         "score": score,
-        "message": "Minimum pass mark is 8/10"
+        "results": detailed_results,
+        "next": {
+            "id": next_module.id,
+            "title": next_module.title_ref.title
+        } if next_module else None
     })
+
 
 
 @api_view(['GET'])
