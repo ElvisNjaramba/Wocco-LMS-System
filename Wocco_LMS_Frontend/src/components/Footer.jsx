@@ -7,7 +7,7 @@ export default function Footer() {
         
         {/* Branding */}
         <div className="mb-4 md:mb-0">
-          <span className="font-bold text-lg">Grey Moon LMS Portal</span>
+          <span className="font-bold text-lg">Wocco LMS Portal</span>
           <p className="text-gray-200 text-sm">© {new Date().getFullYear()} All Rights Reserved.</p>
         </div>
 
