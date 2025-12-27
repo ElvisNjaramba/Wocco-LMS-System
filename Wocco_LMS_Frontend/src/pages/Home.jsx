@@ -103,7 +103,7 @@ export default function Home() {
           </h2>
 
           <p className="text-gray-700 mb-6">
-            Join your fellow Grey Moon employees in exploring company culture,
+            Join your fellow Wocco employees in exploring company culture,
             policies, and workflows—all in one interactive platform.
           </p>
 
