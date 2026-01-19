@@ -8,19 +8,22 @@ const ModuleContent = () => {
   const [pages, setPages] = useState([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [module, setModule] = useState(null);
 
-  useEffect(() => {
-      setPages([]);
-      setIndex(0);
-    setLoading(true);
+useEffect(() => {
+  setPages([]);
+  setIndex(0);
+  setLoading(true);
 
-    api.get(`modules/${id}/pages/`)
-      .then(res =>{ 
-        setPages(res.data);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, [id]);
+  api.get(`modules/${id}/`)          // 👈 fetch module info
+    .then(res => setModule(res.data));
+
+  api.get(`modules/${id}/pages/`)
+    .then(res => setPages(res.data))
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));
+}, [id]);
+
 
   if (loading) return <p className="text-center mt-10 text-gray-500">Loading content...</p>;
   if (!pages.length) return <p className="text-center mt-10 text-gray-500">No content available.</p>;
@@ -35,7 +38,8 @@ const ModuleContent = () => {
 <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-6 flex items-center gap-5">
 
   <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-indigo-600 text-white font-extrabold shadow-lg">
-    <span className="text-2xl md:text-3xl">{index + 1}</span>
+    <span className="text-2xl md:text-3xl">{module?.order}
+</span>
   </div>
 
   <span>{page.title}</span>
