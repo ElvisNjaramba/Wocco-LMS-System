@@ -37,7 +37,7 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
           <Route path="/modules/:id" element={<ModuleDetail />} />
           <Route path="/modules/:id/content" element={<ModuleContent />} />
-          <Route path="/modules/:id/quiz" element={<ModuleQuiz />} />
+          <Route path="/modules/:id/quiz" element={<ModuleContent key={window.location.pathname} />} />
           <Route
             path="/register"
             element={

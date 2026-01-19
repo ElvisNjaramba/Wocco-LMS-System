@@ -10,10 +10,14 @@ const ModuleContent = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+      setPages([]);
+      setIndex(0);
+    setLoading(true);
+
     api.get(`modules/${id}/pages/`)
       .then(res =>{ 
         setPages(res.data);
-        setIndex(0);})
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [id]);
