@@ -49,7 +49,16 @@ const FinalQuiz = () => {
       <h1 className="text-3xl font-bold mb-6">Final Quiz</h1>
       {questions.map((q) => (
         <div key={q.id} className="mb-6 p-4 border rounded">
-          <p className="font-semibold mb-2">{q.text}</p>
+          <div className="flex items-start gap-3 mb-2">
+  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+    {questions.findIndex(item => item.id === q.id) + 1}
+  </div>
+
+  <p className="font-semibold">
+    {q.text}
+  </p>
+</div>
+
           {["option_a","option_b","option_c","option_d"].map((opt) => (
             <label key={opt} className="block mb-1">
               <input

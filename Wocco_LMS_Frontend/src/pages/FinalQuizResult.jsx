@@ -59,9 +59,15 @@ const FinalQuizResult = () => {
                 : "border-red-400 bg-red-50"
             }`}
           >
-            <p className="font-semibold mb-2">
-              {index + 1}. {r.question}
-            </p>
+<div className="flex items-start gap-3 mb-2">
+  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+    {index + 1}
+  </div>
+  <p className="font-semibold">
+    {r.question}
+  </p>
+</div>
+
 
             {Object.entries(r.options).map(([key, value]) => {
               const isSelected = r.selected === key;

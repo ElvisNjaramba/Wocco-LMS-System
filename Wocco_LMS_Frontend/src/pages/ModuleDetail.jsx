@@ -17,17 +17,14 @@ const ModuleDetail = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-10 bg-gray-50 min-h-screen rounded-xl shadow-sm">
-      {/* Module Header */}
       <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-4 flex items-center gap-2">
         📚 {module.title}
       </h1>
 
-      {/* Module Description Card */}
       <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg mb-8 prose prose-indigo">
         <p>{module.description}</p>
       </div>
 
-      {/* Start Module Button */}
       <div className="flex justify-center">
         <button
           onClick={() => navigate(`/modules/${id}/content`)}
