@@ -11,7 +11,9 @@ const ModuleContent = () => {
 
   useEffect(() => {
     api.get(`modules/${id}/pages/`)
-      .then(res => setPages(res.data))
+      .then(res =>{ 
+        setPages(res.data);
+        setIndex(0);})
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [id]);
@@ -26,17 +28,15 @@ const ModuleContent = () => {
       {/* <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-6 flex items-center gap-2">
         📘 {page.title}
       </h1> */}
-      <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-6 flex items-center gap-4">
-  
-  {/* Numbered Book Icon */}
-  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 font-bold shadow">
-    <span className="text-lg">{index + 1}</span>
-    <span className="ml-1">📘</span>
+<h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-6 flex items-center gap-5">
+
+  <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-indigo-600 text-white font-extrabold shadow-lg">
+    <span className="text-2xl md:text-3xl">{index + 1}</span>
   </div>
 
-  {/* Page Title */}
   <span>{page.title}</span>
 </h1>
+
 
       <div
         className="space-y-6"
