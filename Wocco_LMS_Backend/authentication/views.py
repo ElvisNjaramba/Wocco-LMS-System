@@ -1,3 +1,4 @@
+import profile
 from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth.models import User
@@ -91,6 +92,7 @@ def add_user_api(request):
     profile.title = title_obj
     profile.department = dept_obj
     profile.save()
+    profile.must_change_password = True
 
     # Store temp credentials
     CreatedUserCredential.objects.create(
@@ -170,9 +172,9 @@ def upload_users_excel_api(request):
             # ✅ Update profile with instances
             Profile.objects.filter(user=user).update(
                 title=title_obj,
-                department=dept_obj
+                department=dept_obj,
+                must_change_password=True
             )
-
             # ✅ Store credentials
             CreatedUserCredential.objects.create(
                 user=user,
@@ -213,8 +215,9 @@ def me_api(request):
         "id": request.user.id,
         "username": request.user.username,
         "is_superuser": request.user.is_superuser,
-        "position": profile.title,
-        "department": profile.department,
+        "position": profile.title.name if profile.title else None,      # ✅ .name
+        "department": profile.department.name if profile.department else None,  # ✅ .name
+        "must_change_password": profile.must_change_password,
     })
 
 @api_view(["GET"])

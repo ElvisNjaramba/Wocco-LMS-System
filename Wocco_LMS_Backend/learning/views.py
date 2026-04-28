@@ -1,3 +1,4 @@
+from sys import modules
 from django.http import HttpResponse
 import openpyxl
 from rest_framework.viewsets import ModelViewSet
@@ -305,15 +306,18 @@ def all_users_progress_api(request):
         # Module progress
         position_modules = Module.objects.filter(position=position).order_by('order')
         for module in position_modules:
-            progress, _ = UserProgress.objects.get_or_create(
-                user=user,
-                module=module
+            progress, _ = UserProgress.objects.get_or_create(user=user, module=module)
+            attempts = list(
+                QuizAttempt.objects.filter(user=user, module=module)
+                .order_by("attempted_at")
+                .values("score", "attempted_at")
             )
             modules.append({
                 "module_id": module.id,
                 "module_title": module.title_ref.title,
                 "completed": progress.completed,
-                "score": progress.score
+                "score": progress.score,          # best/latest score
+                "attempts": attempts,             # ← full history
             })
 
         # Final Quiz progress
@@ -470,3 +474,85 @@ def export_users_excel(request):
     response['Content-Disposition'] = 'attachment; filename="user_progress.xlsx"'
     wb.save(response)
     return response
+
+
+
+from .models import ModuleTitle, Module, ModulePage
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def editor_modules_api(request):
+    """List all ModuleTitles with their position-specific modules and pages."""
+    titles = ModuleTitle.objects.prefetch_related(
+        'position_modules__pages'
+    ).all().order_by('id')
+
+    result = []
+    for title in titles:
+        for module in title.position_modules.all():
+            result.append({
+                "module_id": module.id,
+                "title": title.title,
+                "title_id": title.id,
+                "position": module.position,
+                "description": module.description,
+                "order": module.order,
+                "pages": [
+                    {"id": p.id, "title": p.title, "content": p.content, "order": p.order}
+                    for p in module.pages.all()
+                ]
+            })
+    return Response(result)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def editor_update_page_api(request, page_id):
+    """Update a single page's title and content."""
+    page = get_object_or_404(ModulePage, id=page_id)
+    page.title = request.data.get('title', page.title)
+    page.content = request.data.get('content', page.content)
+    page.save()
+    return Response({"saved": True})
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def editor_add_page_api(request, module_id):
+    """Add a new page to a module."""
+    module = get_object_or_404(Module, id=module_id)
+    page = ModulePage.objects.create(
+        module=module,
+        title=request.data.get('title', 'New Page'),
+        content=request.data.get('content', '')
+    )
+    return Response({"id": page.id, "title": page.title, "order": page.order}, status=201)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def editor_delete_page_api(request, page_id):
+    page = get_object_or_404(ModulePage, id=page_id)
+    page.delete()
+    return Response(status=204)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_attempt_history_api(request):
+    attempts = (
+        QuizAttempt.objects
+        .filter(user=request.user)
+        .select_related('module__title_ref')
+        .order_by('-attempted_at')
+    )
+    data = [
+        {
+            "module_title": a.module.title_ref.title,
+            "score": a.score,
+            "attempted_at": a.attempted_at,
+            "passed": a.score >= 8,
+        }
+        for a in attempts
+    ]
+    return Response(data)
