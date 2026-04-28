@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../api/axios"; // <-- import axios
+import api from "../api/axios";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isSuperuser, setIsSuperuser] = useState(false); // ✅ new
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,16 +39,28 @@ export default function Navbar() {
 
           {/* Desktop menu */}
           <div className="hidden md:flex space-x-6 items-center">
-            <Link to="/" className="block py-2 hover:text-gray-200 transition">Home</Link>
+            <Link to="/" className="hover:text-gray-200 transition">Home</Link>
+
+            {/* ✅ Superuser: "Dashboard" goes back to superuser dashboard */}
+            {/* ✅ Regular user: "Modules" goes to their learning dashboard */}
             <Link
               to={isSuperuser ? "/superuser/dashboard" : "/dashboard"}
               className="hover:text-gray-200 transition"
             >
-              Dashboard
+              {isSuperuser ? "Dashboard" : "Modules"}
             </Link>
 
+            {/* ✅ Superuser only: Module Editor */}
+            {isSuperuser && (
+              <Link
+                to="/superuser/module-editor"
+                className="hover:text-gray-200 transition"
+              >
+                Module Editor
+              </Link>
+            )}
 
-            {/* ✅ Superuser-only Register link */}
+            {/* ✅ Superuser only: Register */}
             {isSuperuser && (
               <Link to="/register" className="hover:text-gray-200 transition">
                 Register
@@ -74,10 +86,7 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="focus:outline-none"
-            >
+            <button onClick={() => setMenuOpen(!menuOpen)} className="focus:outline-none">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {menuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -94,11 +103,24 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-indigo-700 px-4 pt-2 pb-4 space-y-1">
           <Link to="/" className="block py-2 hover:text-gray-200 transition">Home</Link>
-          <Link to="/dashboard" className="block py-2 hover:text-gray-200 transition">Dashboard</Link>
 
-          {/* ✅ Superuser-only */}
+          <Link
+            to={isSuperuser ? "/superuser/dashboard" : "/dashboard"}
+            className="block py-2 hover:text-gray-200 transition"
+          >
+            {isSuperuser ? "Dashboard" : "Modules"}
+          </Link>
+
           {isSuperuser && (
-            <Link to="/register" className="block py-2 hover:text-gray-200 transition">Register</Link>
+            <Link to="/superuser/module-editor" className="block py-2 hover:text-gray-200 transition">
+              Module Editor
+            </Link>
+          )}
+
+          {isSuperuser && (
+            <Link to="/register" className="block py-2 hover:text-gray-200 transition">
+              Register
+            </Link>
           )}
 
           {isLoggedIn ? (
@@ -121,4 +143,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

@@ -36,30 +36,39 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const response = await api.post("token/", { username, password });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    setLoading(true);
+    const response = await api.post("token/", { username, password });
 
-      localStorage.setItem("access", response.data.access);
-      localStorage.setItem("refresh", response.data.refresh);
-      localStorage.setItem("username", username);
+    localStorage.setItem("access", response.data.access);
+    localStorage.setItem("refresh", response.data.refresh);
+    localStorage.setItem("username", username);
 
-      const profileRes = await api.get("profile/");
-      const profile = profileRes.data[0];
-      if (profile?.user?.is_superuser) {
-        navigate("/superuser/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Invalid username or password");
-    } finally {
-      setLoading(false);
+    // ✅ Use me/ instead of profile/ — it returns must_change_password
+    const meRes = await api.get("me/");
+    const me = meRes.data;
+
+    // ✅ Intercept before any navigation
+    if (me.must_change_password) {
+      navigate("/force-change-password");
+      return;
     }
-  };
+
+    if (me.is_superuser) {
+      navigate("/superuser/dashboard");
+    } else {
+      navigate("/dashboard");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Invalid username or password");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

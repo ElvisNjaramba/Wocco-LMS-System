@@ -2,6 +2,41 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
+function AttemptHistory() {
+  const [attempts, setAttempts] = useState([]);
+
+  useEffect(() => {
+    api.get("my-attempts/").then(r => setAttempts(r.data));
+  }, []);
+
+  if (!attempts.length) return null;
+
+  return (
+    <div className="bg-white border rounded-2xl p-5 mt-6">
+      <h2 className="font-semibold text-gray-800 mb-4">📋 Your Quiz History</h2>
+      <div className="space-y-2">
+        {attempts.map((a, i) => (
+          <div key={i} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
+            <span className="text-gray-700 font-medium">{a.module_title}</span>
+            <div className="flex items-center gap-3">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                ${a.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-500"}`}>
+                {a.passed ? "Passed" : "Failed"}
+              </span>
+              <span className="text-gray-600 font-mono">{a.score}/10</span>
+              <span className="text-gray-400">
+                {new Date(a.attempted_at).toLocaleDateString("en-GB", {
+                  day: "numeric", month: "short", year: "numeric"
+                })}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const Dashboard = () => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,16 +135,18 @@ const Dashboard = () => {
                         ? "Ready to start."
                         : "Complete previous module first."}
               </p>
+
               {m.reading_time > 0 && (
-                  <p className="text-xs text-gray-400 mt-1">⏱ ~{m.reading_time} min read</p>
+                <p className="text-xs text-gray-400 mt-1">⏱ ~{m.reading_time} min read</p>
               )}
+
               {/* Actions */}
               {canAccess && (
                 <div
                   onClick={() => navigate(`/modules/${m.module_id}`)}
                   className="mt-6 text-indigo-600 font-medium cursor-pointer"
                 >
-                  Start Module →
+                  {m.completed ? "Review Module →" : "Start Module →"}
                 </div>
               )}
 
@@ -170,6 +207,10 @@ const Dashboard = () => {
         </div>
 
       </div>
+
+      {/* Attempt history — only visible to logged-in users */}
+      {isAuthenticated && <AttemptHistory />}
+
     </div>
   );
 };
