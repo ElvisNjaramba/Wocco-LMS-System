@@ -4,12 +4,17 @@ from .views import (
     ModuleViewSet,
     all_users_progress_api,
     dashboard_api,
+    department_analytics_api,
+    export_users_excel,
+    get_last_page,
     module_pages_api,
     module_questions_api,
     complete_module_api,
     final_quiz_api,
     next_module_api,
-    submit_final_quiz
+    save_page_progress,
+    submit_final_quiz,
+    user_detail_progress_api
 )
 
 learning_router = DefaultRouter()
@@ -26,5 +31,12 @@ urlpatterns = [
     path("modules/<int:module_id>/pages/", module_pages_api),
     path("modules/<int:module_id>/next/", next_module_api),
     path("superuser/all-users-progress/", all_users_progress_api, name="all_users_progress"),
+
+    path("modules/<int:module_id>/save-page/", save_page_progress),
+    path("modules/<int:module_id>/last-page/", get_last_page),
+
+    path("superuser/user-progress/<int:user_id>/", user_detail_progress_api),
+    path("superuser/department-analytics/", department_analytics_api),
+    path("superuser/export-excel/", export_users_excel),
 
 ]

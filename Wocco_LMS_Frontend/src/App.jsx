@@ -15,6 +15,8 @@ import ModuleContent from './pages/ModuleContent';
 import ModuleQuiz from './pages/ModuleQuiz';
 import FinalQuiz from './pages/FinalQuiz';
 import FinalQuizResult from './pages/FinalQuizResult';
+import SuperuserUserDetail from "./pages/SuperuserUserDetail";
+
 
 // Layout components
 import Navbar from './components/Navbar';
@@ -47,6 +49,7 @@ function AppRoutes() {
             }
           />
           <Route path="/superuser/dashboard" element={<SuperuserDashboard />} />
+          <Route path="/superuser/user/:id" element={<SuperuserUserDetail />} />
           <Route path="/superuser/add-user" element={<AddUser />} />
           <Route path="/superuser/upload-users" element={<UploadUsers />} />
           <Route path="/final-quiz" element={<FinalQuiz />} />

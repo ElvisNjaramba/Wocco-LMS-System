@@ -1,6 +1,10 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth.models import User
-from .models import Department, Position, Profile
+
+from LMS_System import settings
+from django.conf import settings
+from .models import Department, Position, Profile, UserSession
 from .serializers import ProfileSerializer, UserSerializer
 from rest_framework import generics
 from .serializers import RegisterSerializer
@@ -32,6 +36,17 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            ip = request.META.get('REMOTE_ADDR')
+            ua = request.META.get('HTTP_USER_AGENT', '')
+            user = User.objects.get(username=request.data['username'])
+            UserSession.objects.create(user=user, ip_address=ip, user_agent=ua)
+        return response
 
 # authentication/views.py
 from rest_framework.decorators import api_view, permission_classes
@@ -248,3 +263,58 @@ def created_users_api(request):
     ]
 
     return Response(data)
+
+from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_password_reset(request):
+    email = request.data.get('email')
+    user = User.objects.filter(email=email).first()
+    if user:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        send_mail("Password Reset", f"Click here: {reset_link}", settings.DEFAULT_FROM_EMAIL, [email])
+    return Response({"message": "If this email exists, a reset link was sent."})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_password_reset(request):
+    uid = request.data.get('uid')
+    token = request.data.get('token')
+    password = request.data.get('password')
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id)
+    except Exception:
+        return Response({"error": "Invalid link"}, status=400)
+    if not default_token_generator.check_token(user, token):
+        return Response({"error": "Token expired or invalid"}, status=400)
+    user.set_password(password)
+    user.save()
+    return Response({"message": "Password reset successful"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    new_password = request.data.get('new_password')
+    user.set_password(new_password)
+    user.save()
+    user.profile.must_change_password = False
+    user.profile.save()
+    return Response({"message": "Password updated"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def toggle_user_active(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = not user.is_active
+    user.save()
+    return Response({"is_active": user.is_active})

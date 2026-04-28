@@ -15,14 +15,30 @@ useEffect(() => {
   setIndex(0);
   setLoading(true);
 
-  api.get(`modules/${id}/`)          // 👈 fetch module info
+  api.get(`modules/${id}/`)
     .then(res => setModule(res.data));
 
-  api.get(`modules/${id}/pages/`)
-    .then(res => setPages(res.data))
+  Promise.all([
+    api.get(`modules/${id}/pages/`),
+    api.get(`modules/${id}/last-page/`)
+  ])
+    .then(([pagesRes, lastRes]) => {
+      setPages(pagesRes.data);
+      const lastOrder = lastRes.data.last_page_order;
+      if (lastOrder > 0) {
+        const resumeIndex = pagesRes.data.findIndex(p => p.order > lastOrder);
+        setIndex(resumeIndex === -1 ? pagesRes.data.length - 1 : resumeIndex);
+      }
+    })
     .catch(err => console.error(err))
     .finally(() => setLoading(false));
 }, [id]);
+
+useEffect(() => {
+  if (pages[index]) {
+    api.post(`modules/${id}/save-page/`, { page_id: pages[index].id });
+  }
+}, [index]);
 
 
   if (loading) return <p className="text-center mt-10 text-gray-500">Loading content...</p>;

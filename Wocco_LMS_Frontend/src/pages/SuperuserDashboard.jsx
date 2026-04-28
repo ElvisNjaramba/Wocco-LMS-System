@@ -8,6 +8,7 @@ export default function SuperuserDashboard() {
   const [users, setUsers] = useState([]);
   const [modules, setModules] = useState([]);
   const [search, setSearch] = useState("");
+  const [stats, setStats] = useState({ total: 0, finalPassed: 0, avgScore: 0 });
 
   // 🔢 Pagination
   const USERS_PER_PAGE = 15;
@@ -17,8 +18,18 @@ export default function SuperuserDashboard() {
   useEffect(() => {
     api
       .get("superuser/all-users-progress/")
-      .then(res => setUsers(res.data))
-      .catch(() => {});
+      .then(res => {
+        setUsers(res.data);
+
+        const total = res.data.length;
+        const finalPassed = res.data.filter(u => u.final_quiz?.completed).length;
+        const allScores = res.data.flatMap(u => u.modules.map(m => m.score));
+        const avgScore = allScores.length
+          ? (allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(1)
+          : 0;
+        setStats({ total, finalPassed, avgScore });
+      })
+      .catch(() => { });
   }, []);
 
   // Build module columns
@@ -86,6 +97,44 @@ export default function SuperuserDashboard() {
           >
             📤 Upload Excel
           </button>
+          <button
+            onClick={async () => {
+              try {
+                const res = await api.get('superuser/export-excel/', {
+                  responseType: 'blob'
+                });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'user_progress.xlsx');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              } catch (err) {
+                alert('Export failed');
+              }
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            📥 Export Excel
+          </button>
+        </div>
+      </div>
+
+
+
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-4 border text-center">
+          <p className="text-2xl font-bold text-indigo-700">{stats.total}</p>
+          <p className="text-sm text-gray-500">Total Employees</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 border text-center">
+          <p className="text-2xl font-bold text-green-600">{stats.finalPassed}</p>
+          <p className="text-sm text-gray-500">Final Quiz Passed</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 border text-center">
+          <p className="text-2xl font-bold text-yellow-600">{stats.avgScore}</p>
+          <p className="text-sm text-gray-500">Avg Module Score</p>
         </div>
       </div>
 
@@ -154,7 +203,10 @@ export default function SuperuserDashboard() {
 
             {paginatedUsers.map((u, i) => (
               <tr key={i} className="hover:bg-indigo-50">
-                <td className="sticky left-0 bg-white border p-3 font-semibold">
+                <td
+                  className="sticky left-0 bg-white border p-3 font-semibold cursor-pointer text-indigo-600 hover:underline"
+                  onClick={() => navigate(`/superuser/user/${u.id}`)}
+                >
                   {u.first_name} {u.last_name}
                 </td>
                 <td className="border p-3 text-xs">{u.username}</td>
@@ -170,11 +222,10 @@ export default function SuperuserDashboard() {
                     <td key={j} className="border p-2 text-center">
                       {mod ? (
                         <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${
-                            mod.completed
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${mod.completed
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                            }`}
                         >
                           {mod.completed ? "✔" : "✖"} {mod.score}
                         </span>
@@ -190,6 +241,24 @@ export default function SuperuserDashboard() {
                     {u.final_quiz ? u.final_quiz.score : "—"}
                   </td>
                 )}
+                <td className="border p-2 text-center">
+                  <button
+                    onClick={() =>
+                      api.post(`superuser/toggle-user-active/${u.id}/`).then(res => {
+                        setUsers(prev =>
+                          prev.map(user =>
+                            user.id === u.id
+                              ? { ...user, is_active: res.data.is_active }
+                              : user
+                          )
+                        );
+                      })
+                    }
+                    className={`text-xs px-2 py-1 rounded ${u.is_active ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                  >
+                    {u.is_active ? 'Deactivate' : 'Activate'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -211,11 +280,10 @@ export default function SuperuserDashboard() {
             <button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-2 rounded border ${
-                currentPage === i + 1
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white"
-              }`}
+              className={`px-3 py-2 rounded border ${currentPage === i + 1
+                ? "bg-indigo-600 text-white"
+                : "bg-white"
+                }`}
             >
               {i + 1}
             </button>

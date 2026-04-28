@@ -9,7 +9,7 @@ const ModuleQuiz = () => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState(null); // store quiz result
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     api.get(`modules/${id}/questions/`)
@@ -28,27 +28,21 @@ const ModuleQuiz = () => {
     }
   };
 
-  const handleNext = () => {
-    // If there's a next module, navigate there
-    if (result.next) {
-      navigate(`/modules/${result.next.id}/quiz`);
-    } else {
-      // No next module -> proceed to final quiz
-      navigate("/final-quiz");
-    }
-  };
-
   if (loading) return <p>Loading quiz...</p>;
 
   // If result exists, show result page first
-  if (result) {
+if (result) {
     return (
       <ModuleResult
         score={result.score}
         passed={result.passed}
         nextModule={result.next}
         results={result.results}
-        onNext={handleNext} // ✅ pass next handler
+        moduleId={id}
+        onRetry={() => {
+          setResult(null);   // ✅ clears result, shows quiz again
+          setAnswers({});    // ✅ resets selected answers
+        }}
       />
     );
   }

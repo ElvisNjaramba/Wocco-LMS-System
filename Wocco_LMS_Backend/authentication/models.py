@@ -26,7 +26,7 @@ class Profile(models.Model):
     phone = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     bio = models.TextField(max_length=200, blank=True, null=True)
-
+    must_change_password = models.BooleanField(default=False)
     # New: FK to Position and Department
     title = models.ForeignKey(
         Position,
@@ -69,3 +69,11 @@ class CreatedUserCredential(models.Model):
 
     def __str__(self):
         return self.username
+
+
+class UserSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
+    ip_address = models.GenericIPAddressField(null=True)
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)

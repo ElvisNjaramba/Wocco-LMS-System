@@ -1,3 +1,5 @@
+from django.http import HttpResponse
+import openpyxl
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -6,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAdminUser
 from .utils import is_final_quiz_unlocked, is_module_unlocked
 from authentication.models import CreatedUserCredential
-from .models import FinalQuizProgress, Module, ModuleTitle, Question, UserProgress
+from .models import FinalQuizProgress, Module, ModulePage, ModuleTitle, PageProgress, Question, QuizAttempt, QuizAttempt, UserProgress
 from .serializers import ModulePageSerializer, ModuleSerializer, QuestionSerializer
 
 
@@ -56,6 +58,18 @@ def complete_module_api(request, pk):
     module = get_object_or_404(Module, pk=pk)
     user = request.user
 
+        # ✅ ADD THIS BLOCK:
+    from django.utils import timezone
+    from datetime import timedelta
+    COOLDOWN_MINUTES = 30
+    MAX_ATTEMPTS = 3
+    recent_attempts = QuizAttempt.objects.filter(
+        user=user, module=module,
+        attempted_at__gte=timezone.now() - timedelta(minutes=COOLDOWN_MINUTES)
+    )
+    if recent_attempts.count() >= MAX_ATTEMPTS:
+        return Response({"detail": "Too many attempts. Please wait 30 minutes."}, status=429)
+
     answers = request.data.get("answers", {})
     questions = module.questions.all()[:10]
 
@@ -91,6 +105,7 @@ def complete_module_api(request, pk):
     progress.score = score
     progress.completed = score >= 8
     progress.save()
+    QuizAttempt.objects.create(user=user, module=module, score=score)
 
     next_module = None
     if score >= 8:
@@ -167,43 +182,6 @@ def submit_final_quiz(request):
 
 from rest_framework.permissions import AllowAny
 
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def dashboard_api(request):
-#     user = request.user if request.user.is_authenticated else None
-#     position = getattr(user.profile.title, 'name', None) if user else None
-
-#     titles = ModuleTitle.objects.all().order_by("id")
-#     result = []
-
-#     for title in titles:
-#         module = Module.objects.filter(
-#             title_ref=title,
-#             position=position
-#         ).first() if position else None
-
-#         if module:
-#             completed = False
-#             unlocked = False
-#             if user:
-#                 progress, _ = UserProgress.objects.get_or_create(user=user, module=module)
-#                 completed = progress.completed
-#                 unlocked = is_module_unlocked(user, module)
-#         else:
-#             completed = False
-#             unlocked = False
-
-#         result.append({
-#             "title_id": title.id,
-#             "title": title.title,
-#             "has_content": bool(module),
-#             "completed": completed,
-#             "unlocked": unlocked if user else False,  # anonymous users cannot unlock
-#             "module_id": module.id if module else None
-#         })
-
-#     return Response(result)
-
 from rest_framework.permissions import AllowAny
 from .models import FinalQuizProgress
 
@@ -225,6 +203,14 @@ def dashboard_api(request):
             if position else None
         )
 
+        reading_time = 0
+        if module:
+            total_words = sum(
+                len((p.content or '').split())
+                for p in module.pages.all()
+            )
+            reading_time = max(1, round(total_words / 200))
+
         if user and module:
             progress, _ = UserProgress.objects.get_or_create(
                 user=user,
@@ -242,7 +228,8 @@ def dashboard_api(request):
             "has_content": bool(module),
             "completed": completed,
             "unlocked": unlocked if user else False,
-            "module_id": module.id if module else None
+            "module_id": module.id if module else None,
+            "reading_time": reading_time,
         })
 
     final_progress = (
@@ -300,58 +287,6 @@ def next_module_api(request, module_id):
     })
 from django.contrib.auth.models import User
 
-
-# @api_view(['GET'])
-# @permission_classes([IsAdminUser])
-# def all_users_progress_api(request):
-#     users = User.objects.all().select_related('profile')
-#     result = []
-
-#     for user in users:
-#         profile = getattr(user, "profile", None)
-#         if not profile or not profile.title:
-#             continue
-
-#         position = profile.title.name
-#         modules = []
-
-#         # Module progress
-#         position_modules = Module.objects.filter(position=position).order_by('order')
-#         for module in position_modules:
-#             progress, _ = UserProgress.objects.get_or_create(
-#                 user=user,
-#                 module=module
-#             )
-#             modules.append({
-#                 "module_id": module.id,
-#                 "module_title": module.title_ref.title,
-#                 "completed": progress.completed,
-#                 "score": progress.score
-#             })
-
-#         # Final Quiz progress
-#         final_quiz = FinalQuizProgress.objects.filter(user=user).first()
-
-#         # User credentials
-#         cred = CreatedUserCredential.objects.filter(user=user).first()
-
-#         result.append({
-#             "id": user.id,
-#             "first_name": user.first_name,
-#             "last_name": user.last_name,
-#             "username": cred.username if cred else user.username,
-#             "password": cred.temp_password if cred else "N/A",
-#             "position": profile.title.name,
-#             "department": profile.department.name if profile.department else "N/A",
-#             "modules": modules,
-#             "final_quiz": {
-#                 "completed": final_quiz.completed if final_quiz else False,
-#                 "score": final_quiz.score if final_quiz else 0
-#             }
-#         })
-
-#     return Response(result)
-
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def all_users_progress_api(request):
@@ -395,6 +330,7 @@ def all_users_progress_api(request):
             "password": cred.temp_password if cred else "N/A",
             "position": profile.title.name,
             "department": profile.department.name if profile.department else "N/A",
+            "is_active": user.is_active,
             "modules": modules,
             "final_quiz": {
                 "completed": final_quiz.completed if final_quiz else False,
@@ -403,3 +339,134 @@ def all_users_progress_api(request):
         })
 
     return Response(result)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_page_progress(request, module_id):
+    page_id = request.data.get('page_id')
+    page = get_object_or_404(ModulePage, id=page_id)
+    PageProgress.objects.update_or_create(
+        user=request.user, page=page,
+        defaults={'completed': True}
+    )
+    return Response({"saved": True})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_last_page(request, module_id):
+    completed_pages = PageProgress.objects.filter(
+        user=request.user,
+        page__module_id=module_id,
+        completed=True
+    ).values_list('page__order', flat=True)
+    last_order = max(completed_pages, default=0)
+    return Response({"last_page_order": last_order})
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def user_detail_progress_api(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = getattr(user, 'profile', None)
+    position = profile.title.name if profile and profile.title else None
+    modules = Module.objects.filter(position=position).order_by('order') if position else []
+    data = []
+    for module in modules:
+        progress = UserProgress.objects.filter(user=user, module=module).first()
+        attempts = QuizAttempt.objects.filter(user=user, module=module).values('score', 'attempted_at')
+        data.append({
+            "module_title": module.title_ref.title,
+            "completed": progress.completed if progress else False,
+            "score": progress.score if progress else 0,
+            "attempts": list(attempts)
+        })
+    return Response({
+    "user": f"{user.first_name} {user.last_name}",
+    "position": position or "N/A",
+    "department": profile.department.name if profile and profile.department else "N/A",
+    "modules": data,
+    "final_quiz": {
+        "completed": final_quiz.completed if final_quiz else False,
+        "score": final_quiz.score if final_quiz else 0
+    } if (final_quiz := FinalQuizProgress.objects.filter(user=user).first()) else {
+        "completed": False, "score": 0
+    }
+})
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def department_analytics_api(request):
+    from django.db.models import Avg, Count
+    users = User.objects.select_related('profile__department').all()
+    dept_map = {}
+    for user in users:
+        profile = getattr(user, 'profile', None)
+        if not profile or not profile.department:
+            continue
+        dept = profile.department.name
+        if dept not in dept_map:
+            dept_map[dept] = {"total": 0, "completed_final": 0, "avg_score": []}
+        dept_map[dept]["total"] += 1
+        fq = FinalQuizProgress.objects.filter(user=user).first()
+        if fq and fq.completed:
+            dept_map[dept]["completed_final"] += 1
+        scores = UserProgress.objects.filter(user=user).values_list('score', flat=True)
+        dept_map[dept]["avg_score"].extend(scores)
+
+    result = [
+        {
+            "department": dept,
+            "total_users": v["total"],
+            "final_quiz_passed": v["completed_final"],
+            "avg_module_score": round(sum(v["avg_score"]) / len(v["avg_score"]), 1) if v["avg_score"] else 0
+        }
+        for dept, v in dept_map.items()
+    ]
+    return Response(result)
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def export_users_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "User Progress"
+
+    users = User.objects.select_related('profile').order_by('-date_joined')
+    # Build header dynamically
+    all_module_titles = list(
+        Module.objects.values_list('title_ref__title', flat=True).distinct()
+    )
+    ws.append(["Name", "Username", "Position", "Department"] + all_module_titles + ["Final Quiz Score"])
+
+    for user in users:
+        profile = getattr(user, 'profile', None)
+        if not profile or not profile.title:
+            continue
+        position = profile.title.name
+        row = [
+            f"{user.first_name} {user.last_name}",
+            user.username,
+            position,
+            profile.department.name if profile.department else "N/A"
+        ]
+        for title in all_module_titles:
+            module = Module.objects.filter(title_ref__title=title, position=position).first()
+            if module:
+                progress = UserProgress.objects.filter(user=user, module=module).first()
+                row.append(progress.score if progress else 0)
+            else:
+                row.append("N/A")
+        fq = FinalQuizProgress.objects.filter(user=user).first()
+        row.append(fq.score if fq else 0)
+        ws.append(row)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="user_progress.xlsx"'
+    wb.save(response)
+    return response

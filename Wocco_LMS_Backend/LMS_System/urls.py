@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from authentication.urls import authentication_router
 from learning.urls import learning_router
-from authentication.views import RegisterView
+from authentication.views import CustomTokenObtainPairView, RegisterView
 
 router = DefaultRouter()
 router.registry.extend(authentication_router.registry)
@@ -21,7 +21,7 @@ urlpatterns = [
 
     # Auth-related endpoints
     path('api/register/', RegisterView.as_view(), name='register'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path('api/', include('authentication.urls')),

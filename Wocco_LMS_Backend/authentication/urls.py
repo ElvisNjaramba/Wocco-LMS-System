@@ -2,7 +2,10 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .password_reset_views import PasswordResetConfirmView, PasswordResetRequestView
-from .views import RegisterView, UserViewSet, ProfileViewSet, add_user_api, created_users_api, me_api, profile_choices_api, upload_users_excel_api
+from .views import (RegisterView, UserViewSet, ProfileViewSet, add_user_api, 
+                    confirm_password_reset, created_users_api, 
+                    me_api, profile_choices_api, request_password_reset, toggle_user_active, 
+                    upload_users_excel_api)
 
 authentication_router = DefaultRouter()
 authentication_router.register(r'profile', ProfileViewSet, basename='profile')
@@ -20,5 +23,9 @@ urlpatterns = [
     path('me/', me_api, name='me'),
     path("profile-choices/", profile_choices_api),
     path("superuser/created-users/", created_users_api),
+
+    path('api/password-reset/', request_password_reset),
+    path('api/password-reset/confirm/', confirm_password_reset),
+    path('superuser/toggle-user-active/<int:user_id>/', toggle_user_active),
 
 ]

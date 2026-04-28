@@ -1,23 +1,23 @@
 import { useNavigate } from "react-router-dom";
 
-const ModuleResult = ({ score, passed, nextModule, results }) => {
+const ModuleResult = ({ score, passed, nextModule, results, moduleId, onRetry }) => {
   const navigate = useNavigate();
 
   const handleContinue = () => {
     if (passed) {
       if (nextModule) {
-      
         navigate(`/modules/${nextModule.id}/content`);
       } else {
-       
         navigate("/final-quiz");
       }
     } else {
-  
-      navigate(0); 
+      if (onRetry) {
+        onRetry(); // ✅ clears result state in parent, no page reload
+      }
     }
   };
 
+  
   return (
     <div className="max-w-4xl mx-auto p-8 mt-12 bg-white rounded-xl shadow-lg">
       <h1 className="text-3xl font-bold text-center mb-4">

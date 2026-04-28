@@ -110,3 +110,9 @@ class FinalQuizProgress(models.Model):
 
     class Meta:
         unique_together = ('user',)
+
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    attempted_at = models.DateTimeField(auto_now_add=True)
+    score = models.IntegerField(default=0)
